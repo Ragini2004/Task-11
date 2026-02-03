@@ -1,0 +1,42 @@
+import pandas as pd
+import numpy as np
+from scipy import stats
+import matplotlib.pyplot as plt
+
+# Load data
+df = pd.read_csv("../data/ab_test_data.csv")
+
+# Split groups
+control = df[df['group'] == 'control']['conversion']
+test = df[df['group'] == 'test']['conversion']
+
+# Mean conversion rates
+control_mean = control.mean()
+test_mean = test.mean()
+
+# Hypothesis testing
+alpha = 0.05
+t_stat, p_value = stats.ttest_ind(test, control)
+
+decision = "Reject Null Hypothesis" if p_value < alpha else "Fail to Reject Null Hypothesis"
+
+# Confidence interval
+diff = test_mean - control_mean
+se = np.sqrt(test.var()/len(test) + control.var()/len(control))
+ci = stats.norm.interval(0.95, diff, se)
+
+# Visualization
+plt.hist(control, alpha=0.6, label='Control')
+plt.hist(test, alpha=0.6, label='Test')
+plt.legend()
+plt.title("A/B Test Conversion Distribution")
+plt.show()
+
+# Save summary
+summary = pd.DataFrame({
+    "Metric": ["Control Mean", "Test Mean", "P-value", "Decision"],
+    "Value": [control_mean, test_mean, p_value, decision]
+})
+
+summary.to_csv("../outputs/ab_test_summary.csv", index=False)
+summary
